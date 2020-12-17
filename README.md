@@ -5,7 +5,7 @@ With this software you can turn a Linux device (e.g. Raspberry Pi) into a device
 # Install
 - Download the Chromecast.Device file from [releases](https://github.com/SamDel/ChromeCast-Device/releases)
 - Copy the file to your Linux device
-- Change permission: `chmod 777 Chromecast.Device`
+- Change permission: `chmod 777 ChromeCast.Device`
 - Execute: `./ChromeCast.Device -l -n MyDeviceName`
 - Use [Desktop Audio Streamer](https://github.com/SamDel/ChromeCast-Desktop-Audio-Streamer) on a Windows device to start streaming to the device.
 
