@@ -5,8 +5,8 @@ With this software you can turn a Linux device (e.g. Raspberry Pi) into a device
 # Install
 - Download the Chromecast.Device file from [releases](https://github.com/SamDel/ChromeCast-Device/releases)
 - Copy the file to your Linux device
-- Change permission: chmod 777 Chromecast.Device
-- Execute: ./Chromecast.Device -l -n MyDeviceName
+- Change permission: `chmod 777 Chromecast.Device`
+- Execute: `./Chromecast.Device -l -n MyDeviceName`
 - Use [Desktop Audio Streamer](https://github.com/SamDel/ChromeCast-Desktop-Audio-Streamer) on a Windows device to start streaming to the device.
 
 # Arguments
@@ -17,12 +17,12 @@ The command-line arguments:
 # Utilities
 Chromecast.Device uses these Linux applications, so make sure they are installed:
 
-- vlc/cvlc to start an audio stream: cvlc <url>
-- pkill to stop an audio stream: pkill vlc/cvlc
+- vlc/cvlc to start an audio stream: `cvlc <url>`
+- pkill to stop an audio stream: `pkill vlc`
 - amixer for the volume:
-   * amixer get Master playback to get the level
-   * amixer set Master <level (0-65536)> to set the level
-   * amixer -q sset Master toggle to set mute
+   * `amixer get Master playback` to get the level
+   * `amixer set Master <level (0-65536)>` to set the level
+   * `amixer -q sset Master toggle` to toggle mute
 
 # Dependencies
 - [Makaretu.Dns.Multicast](https://github.com/richardschneider/net-mdns)
