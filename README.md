@@ -1,6 +1,6 @@
 # Chromecast Device
 
-With this software you can turn a Linux device (e.g. Raspberry Pi) into a device that can be used by [Desktop Audio Streamer](https://github.com/SamDel/ChromeCast-Desktop-Audio-Streamer) to play audio.
+With this software you can turn a Linux device (e.g. Raspberry Pi) into a device that can be used by [Desktop Audio Streamer](https://github.com/SamDel/ChromeCast-Desktop-Audio-Streamer) to play audio. I've tested on a Raspberry Pi 2 Model B Rev 1.1 with Raspbian GNU/Linux 10 (buster).
 
 # Install
 - Download the ChromeCast.Device file from [releases](https://github.com/SamDel/ChromeCast-Device/releases)
