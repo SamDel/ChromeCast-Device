@@ -11,8 +11,8 @@ With this software you can turn a Linux device (e.g. Raspberry Pi) into a device
 
 # Arguments
 The command-line arguments:
-- "-l" for logging
-- "-n DeviceName" for the name of the device
+- `-l` for logging
+- `-n DeviceName` for the name of the device
 
 # Utilities
 Chromecast.Device uses these Linux applications, so make sure they are installed:
