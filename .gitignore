@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Source/ChromeCast.Device/bin
+/Source/ChromeCast.Device/obj
+/Source/.vs
+Source/ChromeCast.Device/ChromeCast.Device.csproj.user
