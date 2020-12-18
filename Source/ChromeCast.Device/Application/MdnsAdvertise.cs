@@ -1,4 +1,5 @@
-﻿using ChromeCast.Device.Log.Interfaces;
+﻿using ChromeCast.Classes;
+using ChromeCast.Device.Log.Interfaces;
 using Makaretu.Dns;
 using System;
 
@@ -21,7 +22,7 @@ namespace ChromeCast.Device.Application
         {
             var mdns = new MulticastService();
             var sd = new ServiceDiscovery(mdns);
-            var instanceName = Guid.NewGuid().ToString();
+            var instanceName = SystemCalls.SystemGuid();
             var serviceProfile = new ServiceProfile(instanceName, serviceType, port)
             {
                 InstanceName = $"{deviceName}-{instanceName.Replace("-", "")}"

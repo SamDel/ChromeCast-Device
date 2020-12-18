@@ -50,7 +50,7 @@ namespace ChromeCast.Device.Classes
             return GetCastMessage(volumeMessage, namespaceReceiver, sourceId, destinationId);
         }
 
-        public static CastMessage MediaStatusMessage(int requestId, PlayerState playerState, float secondsPlaying)
+        public static CastMessage MediaStatusMessage(int requestId, DeviceState state, float secondsPlaying)
         {
             var mediaStatusMessage = new MessageMediaStatus
             {
@@ -59,12 +59,12 @@ namespace ChromeCast.Device.Classes
                 status = new List<MediaStatus>() {
                     new MediaStatus {
                         currentTime = secondsPlaying,
-                        playerState = playerState.ToString().ToUpper(),
+                        playerState = state.ToString().ToUpper(),
                         volume = new Volume
                         {
                             controlType = "master",
-                            level = SystemVolume.Get(),
-                            muted = SystemVolume.IsMuted(),
+                            level = SystemCalls.GetVolume(),
+                            muted = SystemCalls.IsMuted(),
                             stepInterval = .01f
                         }
                     }
@@ -128,8 +128,8 @@ namespace ChromeCast.Device.Classes
                     volume = new Volume
                     {
                         controlType = "master",
-                        level = SystemVolume.Get(),
-                        muted = SystemVolume.IsMuted(),
+                        level = SystemCalls.GetVolume(),
+                        muted = SystemCalls.IsMuted(),
                         stepInterval = .01f
                     },
                     applications = new List<Application> { 

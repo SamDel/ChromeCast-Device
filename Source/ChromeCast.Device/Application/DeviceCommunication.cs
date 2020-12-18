@@ -10,7 +10,6 @@ namespace ChromeCast.Device.Application
     public class DeviceCommunication
     {
         private DeviceState state = DeviceState.Closed;
-        private readonly Player player = new Player();
         private readonly ILogger logger;
         private DateTime playerPlayTime;
 
@@ -28,15 +27,15 @@ namespace ChromeCast.Device.Application
                     if (castMessage.PayloadUtf8.Contains("muted", System.StringComparison.CurrentCulture))
                     {
                         var volumeMuteMessage = JsonConvert.DeserializeObject<MessageVolumeMute>(castMessage.PayloadUtf8);
-                        SystemVolume.SetMute(volumeMuteMessage.volume.muted);
-                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(volumeMuteMessage.requestId, player.PlayerState, SecondsPlaying()));
+                        SystemCalls.SetMute(volumeMuteMessage.volume.muted);
+                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(volumeMuteMessage.requestId, state, SecondsPlaying()));
                         deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(volumeMuteMessage.requestId));
                     }
                     else
                     {
                         var volumeMessage = JsonConvert.DeserializeObject<MessageVolume>(castMessage.PayloadUtf8);
-                        SystemVolume.Set(volumeMessage.volume.level);
-                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(volumeMessage.requestId, player.PlayerState, SecondsPlaying()));
+                        SystemCalls.SetVolume(volumeMessage.volume.level);
+                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(volumeMessage.requestId, state, SecondsPlaying()));
                         deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(volumeMessage.requestId));
                     }
                     break;
@@ -57,22 +56,23 @@ namespace ChromeCast.Device.Application
                     var loadMessage = JsonConvert.DeserializeObject<MessageLoad>(castMessage.PayloadUtf8);
 
                     logger.Log($"[{state}] Start playing: {loadMessage?.media?.contentId}");
-                    player.Play(loadMessage.media.contentId);
+                    SystemCalls.StartPlaying(loadMessage.media.contentId);
                     playerPlayTime = DateTime.Now;
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(loadMessage.requestId, player.PlayerState, SecondsPlaying()));
+                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(loadMessage.requestId, state, SecondsPlaying()));
+                    state = DeviceState.Buffering;
                     break;
                 case "PAUSE":
                     state = DeviceState.Paused;
                     var pauseMessage = JsonConvert.DeserializeObject<MessagePause>(castMessage.PayloadUtf8);
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(pauseMessage.requestId, player.PlayerState, SecondsPlaying()));
+                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(pauseMessage.requestId, state, SecondsPlaying()));
                     break;
                 case "PLAY":
                     break;
                 case "STOP":
                     state = DeviceState.Idle;
                     var stopMessage = JsonConvert.DeserializeObject<MessageStop>(castMessage.PayloadUtf8);
-                    player.Stop();
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(stopMessage.requestId, player.PlayerState, SecondsPlaying()));
+                    SystemCalls.StopPlaying();
+                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(stopMessage.requestId, state, SecondsPlaying()));
                     break;
                 case "PING":
                     break;
@@ -81,11 +81,11 @@ namespace ChromeCast.Device.Application
                 case "GET_STATUS":
                     var getstatusMessage = JsonConvert.DeserializeObject<MessageStatus>(castMessage.PayloadUtf8);
 
-                    if (player.PlayerState == PlayerState.Buffering)
-                        player.PlayerState = PlayerState.Playing;
+                    if (state== DeviceState.Buffering)
+                        state = DeviceState.Playing;
 
-                    if (player.PlayerState == PlayerState.Playing)
-                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(getstatusMessage.requestId, player.PlayerState, SecondsPlaying()));
+                    if (state == DeviceState.Playing)
+                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(getstatusMessage.requestId, state, SecondsPlaying()));
                     else
                         deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(getstatusMessage.requestId));
 
@@ -114,6 +114,7 @@ namespace ChromeCast.Device.Application
         Connected,
         Launching,
         Loading,
+        Buffering,
         Playing,
         Paused,
         Idle,

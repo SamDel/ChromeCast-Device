@@ -1,12 +1,33 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
 
 namespace ChromeCast.Classes
 {
-    public static class SystemVolume
+    public static class SystemCalls
     {
-        public static float Get()
+        public static void StartPlaying(string url)
         {
-            //amixer get PCM playback | sed -n '/.*\[\([0-9]*\)%].*/s//\1/p'
+            using (var PlayerProcess = new Process())
+            {
+                PlayerProcess.StartInfo.FileName = "cvlc";
+                PlayerProcess.StartInfo.Arguments = url;
+                PlayerProcess.Start();
+            }
+        }
+
+        public static void StopPlaying()
+        {
+            using (var KillProcess = new Process())
+            {
+                KillProcess.StartInfo.FileName = "pkill";
+                KillProcess.StartInfo.Arguments = "vlc";
+                KillProcess.Start();
+            }
+        }
+
+        public static float GetVolume()
+        {
             using var process = new Process();
             process.StartInfo.FileName = "amixer";
             process.StartInfo.Arguments = @"get Master playback";
@@ -25,9 +46,8 @@ namespace ChromeCast.Classes
             }
         }
 
-        public static void Set(float level)
+        public static void SetVolume(float level)
         {
-            //amixer sset Master 65536
             using var process = new Process();
             process.StartInfo.FileName = "amixer";
             process.StartInfo.Arguments = $"set Master {level*65536}";
@@ -60,9 +80,8 @@ namespace ChromeCast.Classes
             return output.Contains("[off]");
         }
 
-        public static void ToggleMute()
+        private static void ToggleMute()
         {
-            //amixer -q sset Master toggle
             using var process = new Process();
             process.StartInfo.FileName = "amixer";
             process.StartInfo.Arguments = $"-q sset Master toggle";
@@ -70,6 +89,27 @@ namespace ChromeCast.Classes
             process.StartInfo.RedirectStandardOutput = true;
             process.Start();
             process.WaitForExit(1000);
+        }
+
+        public static string SystemGuid()
+        {
+            using var process = new Process();
+            process.StartInfo.FileName = "blkid";
+            process.StartInfo.Arguments = "-s UUID -o value";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.Start();
+            var reader = process.StandardOutput;
+            var output = reader.ReadToEnd();
+            var guids = output.Split('\n').Where(x => !string.IsNullOrEmpty(x)).OrderByDescending(y => y.Length).ToArray();
+            if (guids.Any())
+            {
+                return guids.First().Trim();
+            }
+            else
+            {
+                return Guid.NewGuid().ToString();
+            }
         }
     }
 }
