@@ -36,7 +36,7 @@ namespace ChromeCast.Classes
             process.Start();
             var reader = process.StandardOutput;
             var output = reader.ReadToEnd();
-            if (int.TryParse(output.Substring(output.IndexOf("["), 3).Replace("%", "").Replace("[", "").Replace("]", ""), out int levelInt))
+            if (int.TryParse(output.Substring(output.IndexOf("["), 4).Replace("%", "").Replace("[", "").Replace("]", "").Replace(" ", ""), out int levelInt))
             {
                 return levelInt / 100.0f;
             }
@@ -93,23 +93,27 @@ namespace ChromeCast.Classes
 
         public static string SystemGuid()
         {
-            using var process = new Process();
-            process.StartInfo.FileName = "blkid";
-            process.StartInfo.Arguments = "-s UUID -o value";
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.Start();
-            var reader = process.StandardOutput;
-            var output = reader.ReadToEnd();
-            var guids = output.Split('\n').Where(x => !string.IsNullOrEmpty(x)).OrderByDescending(y => y.Length).ToArray();
-            if (guids.Any())
+            try
             {
-                return guids.First().Trim();
+                using var process = new Process();
+                process.StartInfo.FileName = "blkid";
+                process.StartInfo.Arguments = "-s UUID -o value";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.Start();
+                var reader = process.StandardOutput;
+                var output = reader.ReadToEnd();
+                var guids = output.Split('\n').Where(x => !string.IsNullOrEmpty(x)).OrderByDescending(y => y.Length).ToArray();
+                if (guids.Any())
+                {
+                    return guids.First().Trim();
+                }
             }
-            else
+            catch (Exception)
             {
-                return Guid.NewGuid().ToString();
             }
+
+            return Guid.NewGuid().ToString();
         }
     }
 }
