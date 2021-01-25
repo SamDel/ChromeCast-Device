@@ -115,9 +115,9 @@ namespace ChromeCast.Device.Application
             }
         }
 
-        public void Write(CastMessage message)
+        public void Write(CastMessage message, DeviceState state)
         {
-            logger.Log($"out [{DateTime.Now.ToLongTimeString()}] [{ipAddress}:{port}] {message.PayloadUtf8}");
+            logger.Log($"out [{DateTime.Now.ToLongTimeString()}] [{state}] [{ipAddress}:{port}] {message.PayloadUtf8}");
             var byteArray = ChromeCastMessages.MessageToByteArray(message);
             sslStream.BeginWrite(byteArray, 0, byteArray.Length, WriteAsyncCallback, sslStream);
         }
