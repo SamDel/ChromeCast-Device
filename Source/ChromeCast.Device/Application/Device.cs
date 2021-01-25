@@ -48,6 +48,10 @@ namespace ChromeCast.Device.Application
             {
                 DeviceEurekaInfoListener.StartListening(ipAddress, 8008, OnReceiveEureka, logger);
             });
+            StartTask(() =>
+            {
+                new VolumeHook().Start(this);
+            });
         }
 
         private void OnReceiveEureka(Socket socket, string message)
@@ -79,6 +83,11 @@ namespace ChromeCast.Device.Application
         {
             DeviceListener.StopListening();
             DeviceEurekaInfoListener.StopListening();
+        }
+
+        public void SendNewVolume(float level)
+        {
+            DeviceCommunication.SendNewVolume(level, DeviceListener);
         }
 
         public void Dispose()
