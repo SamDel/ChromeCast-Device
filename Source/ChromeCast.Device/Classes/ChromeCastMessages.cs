@@ -1,11 +1,11 @@
 ﻿using ChromeCast.Classes;
 using ChromeCast.Device.Application;
 using ChromeCast.Device.ProtocolBuffer;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 namespace ChromeCast.Device.Classes
 {
@@ -184,7 +184,8 @@ namespace ChromeCast.Device.Classes
             if (string.IsNullOrWhiteSpace(sourceId)) sourceId = "sender-0";
             if (string.IsNullOrWhiteSpace(destinationId)) destinationId = "receiver-0";
 
-            var jsonMessage = JsonConvert.SerializeObject(message);
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            var jsonMessage = JsonSerializer.Serialize(message, message.GetType(), options);
             return new CastMessage.Builder
             {
                 ProtocolVersion = 0,
