@@ -26,4 +26,5 @@ Chromecast.Device uses these Linux applications, so make sure they are installed
 
 # Dependencies
 - [Makaretu.Dns.Multicast](https://github.com/richardschneider/net-mdns)
+- [Tmds.MDns](https://github.com/tmds/Tmds.MDns)
 - [Google.ProtocolBuffers](https://github.com/jskeet/protobuf-csharp-port) (converted to .Net Standard 2)
