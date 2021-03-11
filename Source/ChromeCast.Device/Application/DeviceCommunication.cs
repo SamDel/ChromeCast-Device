@@ -77,8 +77,8 @@ namespace ChromeCast.Device.Application
                 case "STOP":
                     state = DeviceState.Idle;
                     var stopMessage = JsonSerializer.Deserialize<MessageStop>(castMessage.PayloadUtf8, options);
-                    SystemCalls.StopPlaying();
                     deviceListener.Write(ChromeCastMessages.MediaStatusMessage(stopMessage.requestId, state, 0), state);
+                    SystemCalls.StopPlaying();
                     break;
                 case "PING":
                     break;
