@@ -26,6 +26,7 @@ namespace ChromeCast.Device.Application
         private X509Certificate cert = null;
         private IPAddress ipAddress;
         private int port;
+        private bool Disposed = false;
 
         public void StartListening(IPAddress ipAddressIn, int portIn, Action<CastMessage> onReceiveIn, ILogger loggerIn)
         {
@@ -33,9 +34,6 @@ namespace ChromeCast.Device.Application
             logger = loggerIn;
             ipAddress = ipAddressIn;
             port = portIn;
-            deviceReceiveBuffer = new DeviceReceiveBuffer();
-            deviceReceiveBuffer.SetCallback(onReceiveMessage);
-            GetCertificate();
 
             DoStartListening();
         }
@@ -44,6 +42,11 @@ namespace ChromeCast.Device.Application
         {
             try
             {
+                deviceReceiveBuffer = new DeviceReceiveBuffer();
+                deviceReceiveBuffer.SetCallback(onReceiveMessage);
+                GetCertificate();
+                Disposed = false;
+
                 IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
                 if (localEndPoint != null && cert != null)
                 {
@@ -66,7 +69,7 @@ namespace ChromeCast.Device.Application
 
         private void AcceptCallback(IAsyncResult ar)
         {
-            if (ar == null || ar.AsyncState == null)
+            if (ar == null || ar.AsyncState == null || Disposed)
                 return;
 
             try
@@ -89,12 +92,16 @@ namespace ChromeCast.Device.Application
             {
                 logger.Log(ex, "DeviceListener.AcceptCallback");
                 Dispose();
+                Thread.Sleep(1000);
                 DoStartListening();
             }
         }
 
         private void ReceiveCallback(IAsyncResult ar)
         {
+            if (Disposed)
+                return;
+
             try
             {
                 var state = (StateObjectSsl)ar.AsyncState;
@@ -111,12 +118,16 @@ namespace ChromeCast.Device.Application
             {
                 logger.Log(ex, "DeviceListener.ReceiveCallback");
                 Dispose();
+                Thread.Sleep(1000);
                 DoStartListening();
             }
         }
 
         public void Write(CastMessage message, DeviceState state)
         {
+            if (Disposed)
+                return;
+
             logger.Log($"out [{DateTime.Now.ToLongTimeString()}] [{state}] [{ipAddress}:{port}] {message.PayloadUtf8}");
             var byteArray = ChromeCastMessages.MessageToByteArray(message);
             sslStream.BeginWrite(byteArray, 0, byteArray.Length, WriteAsyncCallback, sslStream);
@@ -124,6 +135,9 @@ namespace ChromeCast.Device.Application
 
         private void WriteAsyncCallback(IAsyncResult ar)
         {
+            if (Disposed)
+                return;
+
             SslStream sslStream = (SslStream)ar.AsyncState;
 
             try
@@ -157,7 +171,12 @@ namespace ChromeCast.Device.Application
         {
             try
             {
+                Disposed = true;
+                sslStream.Close();
+                sslStream.Dispose();
+                listener.Close();
                 listener.Dispose();
+                listener = null;
                 GC.SuppressFinalize(this);
             }
             catch (Exception ex)
