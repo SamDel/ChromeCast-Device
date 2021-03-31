@@ -93,6 +93,9 @@ namespace ChromeCast.Classes
 
         public static string SystemGuid()
         {
+#if DEBUG
+            return "debugging-40634b2a14f64d5caa028822412cc3cb";
+#else
             try
             {
                 using var process = new Process();
@@ -114,6 +117,7 @@ namespace ChromeCast.Classes
             }
 
             return Guid.NewGuid().ToString();
+#endif
         }
     }
 }
