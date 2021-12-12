@@ -2,7 +2,7 @@
   "profiles": {
     "ChromeCast": {
       "commandName": "Project",
-      "commandLineArgs": "-l -n DebugDevice"
+      "commandLineArgs": "-l -n DebugDevice999 -g g1"
     },
     "WSL 2": {
       "commandName": "WSL2",

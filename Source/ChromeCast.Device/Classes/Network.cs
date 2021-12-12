@@ -103,5 +103,16 @@ namespace ChromeCast.Device.Classes
             }
             return ipAddress;
         }
+
+        public static string GetMacAddress()
+        {
+            var macAddr = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(nic => nic.OperationalStatus == OperationalStatus.Up)
+                .Select(n => n.GetPhysicalAddress().GetAddressBytes()).FirstOrDefault();
+            if (macAddr != null)
+                return string.Join(":", macAddr.Select(a => a.ToString("X2")).ToArray());
+            else
+                return "00:00:00:00:00:FF";
+        }
     }
 }
