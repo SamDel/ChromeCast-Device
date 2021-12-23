@@ -51,9 +51,9 @@ namespace ChromeCast.Device.Application
                     break;
                 case "LAUNCH":
                     state = DeviceState.Launching;
-                    var launchMessage = JsonSerializer.Deserialize<MessageLaunch>(castMessage.PayloadUtf8, options);
+                    //var launchMessage = JsonSerializer.Deserialize<MessageLaunch>(castMessage.PayloadUtf8, options);
 
-                    deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(launchMessage.requestId), state);
+                    //deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(launchMessage.requestId), state);
                     break;
                 case "LOAD":
                     state = DeviceState.Loading;
