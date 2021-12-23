@@ -1,29 +1,26 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 
 namespace ChromeCast.Classes
 {
-    public static class SystemCalls
+    public class SystemCalls
     {
         public static void StartPlaying(string url)
         {
-            using (var PlayerProcess = new Process())
-            {
-                PlayerProcess.StartInfo.FileName = "cvlc";
-                PlayerProcess.StartInfo.Arguments = url;
-                PlayerProcess.Start();
-            }
+            StopPlaying();
+
+            using var PlayerProcess = new Process();
+            PlayerProcess.StartInfo.FileName = "cvlc";
+            PlayerProcess.StartInfo.Arguments = $"--play-and-exit {url}";
+            PlayerProcess.Start();
         }
 
         public static void StopPlaying()
         {
-            using (var KillProcess = new Process())
-            {
-                KillProcess.StartInfo.FileName = "pkill";
-                KillProcess.StartInfo.Arguments = "vlc";
-                KillProcess.Start();
-            }
+            using var KillProcess = new Process();
+            KillProcess.StartInfo.FileName = "pkill";
+            KillProcess.StartInfo.Arguments = "vlc";
+            KillProcess.Start();
+            KillProcess.WaitForExit();
         }
 
         public static float GetVolume()
