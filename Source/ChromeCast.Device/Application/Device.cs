@@ -1,7 +1,6 @@
 ﻿using ChromeCast.Device.Application.Interfaces;
 using ChromeCast.Device.Classes;
 using ChromeCast.Device.Log.Interfaces;
-using ChromeCast.Device.ProtocolBuffer;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -14,7 +13,6 @@ namespace ChromeCast.Device.Application
     {
         private DeviceListener DeviceListener { get; set; }
         private IBaseListener DeviceEurekaInfoListener { get; set; }
-        private DeviceCommunication DeviceCommunication { get; set; }
         private readonly ILogger logger;
         private readonly TasksToCancel taskList;
         private readonly IPAddress ipAddress;
@@ -31,7 +29,6 @@ namespace ChromeCast.Device.Application
             logger.Log("Initializing...");
             taskList = new TasksToCancel();
             DeviceListener = new DeviceListener();
-            DeviceCommunication = new DeviceCommunication(logger);
             DeviceEurekaInfoListener = new DeviceEurekaInfoListener();
             MdnsAdvertise = new MdnsAdvertise(logger, this);
             MdnsAdvertise.Advertise();
@@ -44,7 +41,7 @@ namespace ChromeCast.Device.Application
 
             StartTask(() =>
             {
-                DeviceListener.StartListening(ipAddress, 8009, OnReceive, logger);
+                DeviceListener.StartListening(ipAddress, 8009, logger);
             });
             StartTask(() =>
             {
@@ -68,12 +65,6 @@ namespace ChromeCast.Device.Application
             socket.Close();
         }
 
-        private void OnReceive(CastMessage message)
-        {
-            logger.Log($"in [{DateTime.Now.ToLongTimeString()}] [{ipAddress}:8009]: {message.PayloadUtf8}");
-            DeviceCommunication.ProcessMessage(DeviceListener, message);
-        }
-
         /// <summary>
         /// Start an action in a new task.
         /// </summary>
@@ -88,9 +79,9 @@ namespace ChromeCast.Device.Application
             DeviceEurekaInfoListener.StopListening();
         }
 
-        public void SendNewVolume(float level)
+        public void SendNewVolume()
         {
-            DeviceCommunication.SendNewVolume(level, DeviceListener);
+            DeviceListener.SendNewVolume();
         }
 
         public void Dispose()

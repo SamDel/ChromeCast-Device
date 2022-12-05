@@ -5,6 +5,7 @@ using ChromeCast.Device.ProtocolBuffer;
 using System.Text.Json;
 using System;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ChromeCast.Device.Application
 {
@@ -19,7 +20,8 @@ namespace ChromeCast.Device.Application
             logger = loggerIn;
         }
 
-        public void ProcessMessage(DeviceListener deviceListener, CastMessage castMessage)
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
+        public void ProcessMessage(DeviceConnection deviceConnection, CastMessage castMessage)
         {
             var options = new JsonSerializerOptions { IncludeFields = true };
             var message = JsonSerializer.Deserialize<PayloadMessageBase>(castMessage.PayloadUtf8, options);
@@ -30,15 +32,15 @@ namespace ChromeCast.Device.Application
                     {
                         var volumeMuteMessage = JsonSerializer.Deserialize<MessageVolumeMute>(castMessage.PayloadUtf8, options);
                         SystemCalls.SetMute(volumeMuteMessage.volume.muted);
-                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(volumeMuteMessage.requestId, state, SecondsPlaying()), state);
-                        deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(volumeMuteMessage.requestId), state);
+                        deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(volumeMuteMessage.requestId, state, SecondsPlaying()), state);
+                        deviceConnection.Write(ChromeCastMessages.ReceiverStatusMessage(volumeMuteMessage.requestId), state);
                     }
                     else
                     {
                         var volumeMessage = JsonSerializer.Deserialize<MessageVolume>(castMessage.PayloadUtf8, options);
                         SystemCalls.SetVolume(volumeMessage.volume.level);
-                        deviceListener.Write(ChromeCastMessages.MediaStatusMessage(volumeMessage.requestId, state, SecondsPlaying()), state);
-                        deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(volumeMessage.requestId), state);
+                        deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(volumeMessage.requestId, state, SecondsPlaying()), state);
+                        deviceConnection.Write(ChromeCastMessages.ReceiverStatusMessage(volumeMessage.requestId), state);
                     }
                     break;
                 case "CONNECT":
@@ -47,7 +49,7 @@ namespace ChromeCast.Device.Application
                 case "CLOSE":
                     state = DeviceState.Closed;
                     var closeMessage = JsonSerializer.Deserialize<MessageStop>(castMessage.PayloadUtf8, options);
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(closeMessage.requestId, state, 0), state);
+                    deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(closeMessage.requestId, state, 0), state);
                     break;
                 case "LAUNCH":
                     state = DeviceState.Launching;
@@ -56,28 +58,32 @@ namespace ChromeCast.Device.Application
                     //deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(launchMessage.requestId), state);
                     break;
                 case "LOAD":
+                    deviceConnection.OnNewLoad();
                     state = DeviceState.Loading;
                     var loadMessage = JsonSerializer.Deserialize<MessageLoad>(castMessage.PayloadUtf8, options);
 
                     logger.Log($"[{state}] Start playing: {loadMessage?.media?.contentId}");
                     SystemCalls.StartPlaying(loadMessage.media.contentId);
                     playerPlayTime = DateTime.Now;
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(loadMessage.requestId, state, SecondsPlaying()), state);
+                    deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(loadMessage.requestId, state, SecondsPlaying()), state);
                     state = DeviceState.Buffering;
                     Task.Delay(2000).Wait();
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(loadMessage.requestId, state, SecondsPlaying()), state);
+                    deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(loadMessage.requestId, state, SecondsPlaying()), state);
                     break;
                 case "PAUSE":
                     state = DeviceState.Paused;
                     var pauseMessage = JsonSerializer.Deserialize<MessagePause>(castMessage.PayloadUtf8, options);
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(pauseMessage.requestId, state, SecondsPlaying()), state);
+                    deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(pauseMessage.requestId, state, SecondsPlaying()), state);
                     break;
                 case "PLAY":
+                    state = DeviceState.Idle;
+                    var playMessage = JsonSerializer.Deserialize<MessagePause>(castMessage.PayloadUtf8, options);
+                    deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(playMessage.requestId, state, SecondsPlaying()), state);
                     break;
                 case "STOP":
                     state = DeviceState.Idle;
                     var stopMessage = JsonSerializer.Deserialize<MessageStop>(castMessage.PayloadUtf8, options);
-                    deviceListener.Write(ChromeCastMessages.MediaStatusMessage(stopMessage.requestId, state, 0), state);
+                    deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(stopMessage.requestId, state, 0), state);
                     SystemCalls.StopPlaying();
                     break;
                 case "PING":
@@ -95,13 +101,13 @@ namespace ChromeCast.Device.Application
                         case DeviceState.Idle:
                         case DeviceState.Closed:
                         case DeviceState.Connected:
-                            deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(getstatusMessage.requestId), state);
+                            deviceConnection.Write(ChromeCastMessages.ReceiverStatusMessage(getstatusMessage.requestId), state);
                             break;
                         case DeviceState.Playing:
-                            deviceListener.Write(ChromeCastMessages.MediaStatusMessage(getstatusMessage.requestId, state, SecondsPlaying()), state);
+                            deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(getstatusMessage.requestId, state, SecondsPlaying()), state);
                             break;
                         default:
-                            deviceListener.Write(ChromeCastMessages.ReceiverStatusMessage(getstatusMessage.requestId), state);
+                            deviceConnection.Write(ChromeCastMessages.ReceiverStatusMessage(getstatusMessage.requestId), state);
                             break;
                     }
 
@@ -112,9 +118,21 @@ namespace ChromeCast.Device.Application
             }
         }
 
-        public void SendNewVolume(float level, DeviceListener deviceListener)
+        public void Stop(DeviceConnection deviceConnection)
         {
-            deviceListener.Write(ChromeCastMessages.MediaStatusMessage(0, state, SecondsPlaying()), state);
+            if (state == DeviceState.Playing ||
+                state == DeviceState.Launching ||
+                state == DeviceState.Loading ||
+                state == DeviceState.Buffering)
+            {
+                state = DeviceState.Paused;
+                deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(0, state, 0), state);
+            }
+        }
+
+        public void SendNewVolume(DeviceConnection deviceConnection)
+        {
+            deviceConnection.Write(ChromeCastMessages.MediaStatusMessage(0, state, SecondsPlaying()), state);
         }
 
         private float SecondsPlaying()

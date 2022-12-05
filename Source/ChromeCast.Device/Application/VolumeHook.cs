@@ -16,7 +16,7 @@ namespace ChromeCast.Device.Application
                 if (newLevel != Level)
                 {
                     Level = newLevel;
-                    Device.SendNewVolume(Level);
+                    Device.SendNewVolume();
                 }
                 Thread.Sleep(1000);
             }
